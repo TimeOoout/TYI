@@ -136,10 +136,10 @@ class Search_words():
                 if sentence1[i]==None:
                     sentence1[i]='<font color=dodgerblue face="微软雅黑" size=4><b>'+sentence[h]+'</b></font>'
                     break
-        print(sentence1)
+        # print(sentence1)
         group=[]
         senten=''
-        print(sentence)
+        # print(sentence)
         for i in sentence1:
             if  ('.' not in i) and ('。' not in i):
                 #print(i)
@@ -147,7 +147,7 @@ class Search_words():
             else:
                 group.append((senten+i))
                 senten=''
-        print(group)
+        # print(group)
         send.setdefault("Sentence",group)
 
         try:
@@ -189,7 +189,7 @@ class Search_words():
                 if i!='':
                     c_.append(i)
             guess=[]
-            print(e_,c_)
+            # print(e_,c_)
             for i in range(len(e_)):
                 guess.append((e_[i],c_[i]))
             send.setdefault('Guess',guess)
