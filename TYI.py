@@ -20,7 +20,7 @@ class TYI:
         # 例句前缀                                    str
         self.lj_pre = "lj%3A"
         # 百科前缀                                    str
-        self.bk_pre="bk%3A"
+        self.bk_pre = "bk%3A"
 
         # 网页response                               request
         self.__response = None
@@ -42,9 +42,9 @@ class TYI:
         # 双语例句
         self.lj_db = None
         # 原声例句
-        self.lj_or=None
+        self.lj_or = None
         # 权威例句
-        self.lj_au=None
+        self.lj_au = None
         # 例句状态                                   int
         self.lj_status = None
 
@@ -59,51 +59,63 @@ class TYI:
         self.bk_status = None
 
         # 主页部分
-        # 发音 (一般A为英，B为美，支持拼音)               str
-        self.pronunA=None
-        self.pronunB=None
-        # 链接                                        str
-        self.pronunAc=None
-        self.pronunBc=None
+        # 发音 (一般0为英，1为美，支持拼音)               list
+        self.pronun = None
+        # 链接 (同上)                                 list
+        self.pronunc = None
+        # 拼音                                        str
+        self.pinyin=None
 
         # 释义                                        list
         # 简明
-        self.brief_meaning=None
+        self.brief_meaning = None
         # 柯林斯
-        self.collins_meaning=None
+        self.collins_meaning = None
         # 新汉英
-        self.nce=None
+        self.nce = None
         # 现代汉语
-        self.ccl=None
+        self.ccl = None
 
         # 翻译                                        str
-        self.trans=None
+        self.trans = None
 
         # 特殊释义                                     list
         # 网络释义
-        self.web=None
+        self.web = None
         # 英英释义
-        self.en=None
+        self.en = None
         # 专业释义
-        self.pro=None
+        self.pro = None
 
         # 短语                                        list
-        self.phrase=None
+        self.phrase = None
 
         # 词典短语                                      list
-        self.dict_ph=None
-        #词源                                         list
-        self.ph_ori=None
+        self.dict_ph = None
+        # 词源                                         list
+        self.ph_ori = None
+        # 同/近义词                                     list
+        self.synonym=None
+        # 同根词                                       list
+        self.cognates=None
 
         # 猜你想搜                                      list
-        self.guess=None
+        self.guess = None
 
         # 提示                                        str
-        self.tip=None
+        self.tip = None
 
-
-    def getExample(self):
-        lj=[]
+    def __GetPronunciation__(self):
+        # 一般英语会有两个音标，中文只有一个拼音
+        self.pronun=self._html.xpath('//*/span[@data-v-39fab836=""][@class="phonetic"]/text()')
+        self.pinyin=self._html.xpath('//*/span[@data-v-15cf3186=""][@class="phonetic"]/text()')
+        if self.pinyin==[]:
+            # 1是英式2是美式，中文只有拼音没有发音，下载到的是空文件
+            self.pronunc=["http://dict.youdao.com/dictvoice?audio="+self._obj+"&type=1",
+            "http://dict.youdao.com/dictvoice?audio="+self._obj+"&type=2"]
+            self.pinyin = None
+        else:
+            self.pronun=None
 
     def __ReloadStatus__(self):
         # 清空当前状态
@@ -144,12 +156,12 @@ class TYI:
         self.bk_status = None
 
         # 主页部分
-        # 发音 (一般A为英，B为美，支持拼音)               str
-        self.pronunA = None
-        self.pronunB = None
-        # 链接                                        str
-        self.pronunAc = None
-        self.pronunBc = None
+        # 发音 (一般0为英，1为美，支持拼音)               list
+        self.pronun = None
+        # 链接 (同上)                                 list
+        self.pronunc = None
+        # 拼音                                        str
+        self.pinyin = None
 
         # 释义                                        list
         # 简明
@@ -179,6 +191,10 @@ class TYI:
         self.dict_ph = None
         # 词源                                         list
         self.ph_ori = None
+        # 同/近义词                                     list
+        self.synonym = None
+        # 同根词                                       list
+        self.cognates = None
 
         # 猜你想搜                                      list
         self.guess = None
@@ -186,23 +202,7 @@ class TYI:
         # 提示                                        str
         self.tip = None
 
-    def _encode(self, s: str):
-        st = s.replace("/", "/%2F").replace("%", "%25").replace(" ", "%20")
-        st = st.replace("!", "%21")
-        st = st.replace('"', "%22")
-        st = st.replace("#", '%23')
-        st = st.replace("$", "%24")
-        st = st.replace("&", "26")
-        st = st.replace("'", '%27')
-        st = st.replace("(", "%28")
-        st = st.replace(")", "%29")
-        st = st.replace("*", "%2A")
-        st = st.replace("+", "%2B")
-        st = st.replace(",", "%2C")
-        st = st.replace("-", "%2D")
-        st = st.replace(".", "%2E")
-        st=st.replace(":","%3A")
-        return st
+
 
     def setObj(self, obj: str):
         self._obj = self._encode(obj)
@@ -224,16 +224,19 @@ class TYI:
             self._content = self.__response.text
             self._html = etree.HTML(self._content)
 
+            # 获取发音信息
+            self.__GetPronunciation__()
+
             # 获取例句
             try:
                 self.__response = requests.get(self.o_url[0] +
-                                               self.lj_pre+
+                                               self.lj_pre +
                                                self._obj +
                                                self.o_url[1],
                                                headers=self.Head)
                 # 获取例句数据
-                self._lj_con= self.__response.text
-                self._lj_html=etree.HTML(self._lj_con)
+                self._lj_con = self.__response.text
+                self._lj_html = etree.HTML(self._lj_con)
 
             except requests.exceptions.RequestException as er:
                 print(self.__prefix,
@@ -263,8 +266,32 @@ class TYI:
             print(type(er), " | ", er)
             self.status = re.search(r"(?<=port=)\d+", str(er)).group(0)
 
+    @staticmethod
+    def _encode(s: str):
+        st = s.replace("/", "/%2F").replace("%", "%25").replace(" ", "%20")
+        st = st.replace("!", "%21")
+        st = st.replace('"', "%22")
+        st = st.replace("#", '%23')
+        st = st.replace("$", "%24")
+        st = st.replace("&", "26")
+        st = st.replace("'", '%27')
+        st = st.replace("(", "%28")
+        st = st.replace(")", "%29")
+        st = st.replace("*", "%2A")
+        st = st.replace("+", "%2B")
+        st = st.replace(",", "%2C")
+        st = st.replace("-", "%2D")
+        st = st.replace(".", "%2E")
+        st = st.replace(":", "%3A")
+        return st
+
 
 if __name__ == '__main__':
-    a = TYI()
+    a = TYI({
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36 Edg/95.0.1020.44"
+        })
+    a.setObj("你好")
     a.__GetContent__()
-    print(a.status)
+    print(a.pinyin)
+    print(a.pronun)
+    print(a.pronunc)
