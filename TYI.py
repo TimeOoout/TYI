@@ -16,15 +16,14 @@ class TYI:
         # Original_Url                              tuple
         self.o_url = ("https://dict.youdao.com/result?word=", "&lang=en")
         # 翻译对象，自动将 space & / & % 替换成URL编码   str
-        self._obj = "None"
+        self._obj = None
         # 例句前缀                                    str
         self.lj_pre = "lj%3A"
         # 百科前缀                                    str
         self.bk_pre = "bk%3A"
 
-        #刷新状态信息
+        # 刷新状态信息
         self.__RefreshStatus__()
-
 
     def __GetPronunciation__(self):
         # 一般英语会有两个音标，中文只有一个拼音
@@ -37,7 +36,7 @@ class TYI:
             self.pinyin = None
         else:
             self.pronun = None
-            self.pinyin=self.pinyin[0]
+            self.pinyin = self.pinyin[0]
 
     def __RefreshStatus__(self):
         # 清空当前状态
@@ -127,11 +126,20 @@ class TYI:
     def setObj(self, obj: str):
         self._obj = self._encode(obj)
 
+    def queryAll(self,obj:str=None):
+        # 刷新状态
+        if obj!=None:
+            self.setObj(obj)
+        # 刷新状态
+        self.__RefreshStatus__()
+        # 获取所有数据
+        self.__GetContent__()
+        # 解析发音信息
+        self.__GetPronunciation__()
+
     def __GetContent__(self):
         # 获取第一页数据
         try:
-            # 刷新状态
-            self.__RefreshStatus__()
             # 发送请求
             self.__response = requests.get(self.o_url[0] +
                                            self._obj +
@@ -143,9 +151,6 @@ class TYI:
             # 获取网页数据
             self._content = self.__response.text
             self._html = etree.HTML(self._content)
-
-            # 获取发音信息
-            self.__GetPronunciation__()
 
             # 获取例句
             try:
@@ -208,10 +213,11 @@ class TYI:
 
 if __name__ == '__main__':
     a = TYI({
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36 Edg/95.0.1020.44"
+        "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36 Edg/95.0.1020.44"
     })
     a.setObj("hello")
-    a.__GetContent__()
+    a.queryAll()
     print(a.pinyin)
     print(a.pronun)
     print(a.pronunc)
