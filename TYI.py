@@ -30,13 +30,57 @@ class TYI:
         self.pronun = self._html.xpath('//*/span[@data-v-39fab836=""][@class="phonetic"]/text()')
         self.pinyin = self._html.xpath('//*/span[@data-v-15cf3186=""][@class="phonetic"]/text()')
         if self.pinyin == []:
-            # 1是英式2是美式，中文只有拼音没有发音，下载到的是空文件
+            if self.pronun ==[]:
+                self.pronun=None
+            # 1是英式2是美式，中文只有拼音没有发音，下载到了也只有空文件
             self.pronunc = ["https://dict.youdao.com/dictvoice?audio=" + self._obj + "&type=1",
                             "https://dict.youdao.com/dictvoice?audio=" + self._obj + "&type=2"]
             self.pinyin = None
+            response = requests.head(self.pronunc[0])
+            filesize = int(response.headers['Content-Length'])
+            if filesize<=1920:
+                self.pronunc=None
         else:
             self.pronun = None
             self.pinyin = self.pinyin[0]
+
+    def __GetTranslation__(self):
+        temp=self._html.xpath('//*/p[@class="trans-content"]/text()')
+        if temp != []:
+            self.trans=temp[0]
+        else:
+            self.trans=None
+
+    def __GetBriefMeaning__(self):
+        list = self._html.xpath('//*/span[@data-v-8042e1b4=""][@class="pos"]/text()')
+        if list != []:
+            list_c=self._html.xpath('//*/span[@data-v-8042e1b4=""][@class="trans"]/text()')
+            self.brief_meaning = []
+            for i in range(len(list_c)):
+                self.brief_meaning.append((list[i],list_c[i]))
+        else:
+            list = self._html.xpath('//*/span[@data-v-8042e1b4=""][@class="col1 index grey"]/text()')
+            if list != []:
+                list_c = self._html.xpath('//*/a[@data-v-8042e1b4=""][@class="point"]/text()')
+                list_c2 = self._html.xpath('//*/div[@data-v-8042e1b4=""][@class="word-exp_tran grey"]/text()')
+                self.brief_meaning = []
+                for i in range(len(list_c)):
+                    self.brief_meaning.append((list[i],{ list_c[i]:list_c2[i]}))
+
+        """        list=self._html.xpath('//*/span[@data-v-8042e1b4=""]/text()')
+                    if list!=[]:
+                        order = True
+                        self.brief_meaning=[]
+                        temp=["",""]
+                        for i in list:
+                            if order:
+                                temp[0]=i
+                                order=False
+                            else:
+                                temp[1]=i
+                                order=True
+                                self.brief_meaning.append((temp[0],temp[1]))
+        """
 
     def __RefreshStatus__(self):
         # 清空当前状态
@@ -94,6 +138,9 @@ class TYI:
         # 现代汉语
         self.ccl = None
 
+        # 标签                                        list
+        self.label=None
+
         # 翻译                                        str
         self.trans = None
 
@@ -126,9 +173,9 @@ class TYI:
     def setObj(self, obj: str):
         self._obj = self._encode(obj)
 
-    def queryAll(self,obj:str=None):
+    def queryAll(self, obj: str = None):
         # 刷新状态
-        if obj!=None:
+        if obj is not None:
             self.setObj(obj)
         # 刷新状态
         self.__RefreshStatus__()
@@ -136,6 +183,10 @@ class TYI:
         self.__GetContent__()
         # 解析发音信息
         self.__GetPronunciation__()
+        # 解析翻译
+        self.__GetTranslation__()
+        # 解析简明释义
+        self.__GetBriefMeaning__()
 
     def __GetContent__(self):
         # 获取第一页数据
@@ -214,10 +265,13 @@ class TYI:
 if __name__ == '__main__':
     a = TYI({
         "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36 Edg/95.0.1020.44"
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 "
+            "Safari/537.36 Edg/95.0.1020.44 "
     })
-    a.setObj("hello")
+    a.setObj("When do I have a midnight snack")
     a.queryAll()
     print(a.pinyin)
     print(a.pronun)
     print(a.pronunc)
+    print(a.trans)
+    print(a.brief_meaning)
