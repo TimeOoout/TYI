@@ -22,102 +22,24 @@ class TYI:
         # 百科前缀                                    str
         self.bk_pre = "bk%3A"
 
-        # 网页response                               request
-        self.__response = None
-        # 记录最后一次请求的请求状态                     int
-        self.status = None
-        # 记录上一次请求是否成功                        bool
-        self.if_suc = False
-        # 网页源数据                                  str
-        self._content = None
-        # lxml解析数据                               etree
-        self._html = None
+        #刷新状态信息
+        self.__RefreshStatus__()
 
-        # 例句部分
-        # 例句源数据                                 str
-        self._lj_con = None
-        # 例句解析数据                                etree
-        self._lj_html = None
-        # 例句数据                                   list
-        # 双语例句
-        self.lj_db = None
-        # 原声例句
-        self.lj_or = None
-        # 权威例句
-        self.lj_au = None
-        # 例句状态                                   int
-        self.lj_status = None
-
-        # 百科部分
-        # 百科源数据                                 str
-        self._bk_con = None
-        # 百科解析数据                                etree
-        self._bk_html = None
-        # 百科数据                                   list
-        self.bk = None
-        # 百科状态                                   int
-        self.bk_status = None
-
-        # 主页部分
-        # 发音 (一般0为英，1为美，支持拼音)               list
-        self.pronun = None
-        # 链接 (同上)                                 list
-        self.pronunc = None
-        # 拼音                                        str
-        self.pinyin=None
-
-        # 释义                                        list
-        # 简明
-        self.brief_meaning = None
-        # 柯林斯
-        self.collins_meaning = None
-        # 新汉英
-        self.nce = None
-        # 现代汉语
-        self.ccl = None
-
-        # 翻译                                        str
-        self.trans = None
-
-        # 特殊释义                                     list
-        # 网络释义
-        self.web = None
-        # 英英释义
-        self.en = None
-        # 专业释义
-        self.pro = None
-
-        # 短语                                        list
-        self.phrase = None
-
-        # 词典短语                                      list
-        self.dict_ph = None
-        # 词源                                         list
-        self.ph_ori = None
-        # 同/近义词                                     list
-        self.synonym=None
-        # 同根词                                       list
-        self.cognates=None
-
-        # 猜你想搜                                      list
-        self.guess = None
-
-        # 提示                                        str
-        self.tip = None
 
     def __GetPronunciation__(self):
         # 一般英语会有两个音标，中文只有一个拼音
-        self.pronun=self._html.xpath('//*/span[@data-v-39fab836=""][@class="phonetic"]/text()')
-        self.pinyin=self._html.xpath('//*/span[@data-v-15cf3186=""][@class="phonetic"]/text()')
-        if self.pinyin==[]:
+        self.pronun = self._html.xpath('//*/span[@data-v-39fab836=""][@class="phonetic"]/text()')
+        self.pinyin = self._html.xpath('//*/span[@data-v-15cf3186=""][@class="phonetic"]/text()')
+        if self.pinyin == []:
             # 1是英式2是美式，中文只有拼音没有发音，下载到的是空文件
-            self.pronunc=["http://dict.youdao.com/dictvoice?audio="+self._obj+"&type=1",
-            "http://dict.youdao.com/dictvoice?audio="+self._obj+"&type=2"]
+            self.pronunc = ["https://dict.youdao.com/dictvoice?audio=" + self._obj + "&type=1",
+                            "https://dict.youdao.com/dictvoice?audio=" + self._obj + "&type=2"]
             self.pinyin = None
         else:
-            self.pronun=None
+            self.pronun = None
+            self.pinyin=self.pinyin[0]
 
-    def __ReloadStatus__(self):
+    def __RefreshStatus__(self):
         # 清空当前状态
         # 网页response                               request
         self.__response = None
@@ -202,8 +124,6 @@ class TYI:
         # 提示                                        str
         self.tip = None
 
-
-
     def setObj(self, obj: str):
         self._obj = self._encode(obj)
 
@@ -211,7 +131,7 @@ class TYI:
         # 获取第一页数据
         try:
             # 刷新状态
-            self.__ReloadStatus__()
+            self.__RefreshStatus__()
             # 发送请求
             self.__response = requests.get(self.o_url[0] +
                                            self._obj +
@@ -288,9 +208,9 @@ class TYI:
 
 if __name__ == '__main__':
     a = TYI({
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36 Edg/95.0.1020.44"
-        })
-    a.setObj("你好")
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36 Edg/95.0.1020.44"
+    })
+    a.setObj("hello")
     a.__GetContent__()
     print(a.pinyin)
     print(a.pronun)
