@@ -1,230 +1,270 @@
-import sys
-
-import requests
 import re
 from lxml import etree
 
-class Search_words():
+import requests
 
 
-    def Simple_search(self,word:str):
-        head={
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36 Edg/95.0.1020.44"
-        }
-        url="http://dict.youdao.com/w/"+word
-        respone=requests.get(url)
-        text=respone.text
-        html=text
-        #print(text)
-        text=etree.HTML(text)
+class TYI:
+    def __init__(self, head=None):
+        if head is None:
+            head = {"User-Agent": "Mediapartners-Google"}
+        # 本类前缀
+        self.__prefix = " | From class TYI : "
 
-        send={}
+        # http标头                                   dict
+        self.Head = head
+        # Original_Url                              tuple
+        self.o_url = ("https://dict.youdao.com/result?word=", "&lang=en")
+        # 翻译对象，自动将 space & / & % 替换成URL编码   str
+        self._obj = "None"
+        # 例句前缀                                    str
+        self.lj_pre = "lj%3A"
+        # 百科前缀                                    str
+        self.bk_pre="bk%3A"
 
-        send.setdefault("Word",word)
+        # 网页response                               request
+        self.__response = None
+        # 记录最后一次请求的请求状态                     int
+        self.status = None
+        # 记录上一次请求是否成功                        bool
+        self.if_suc = False
+        # 网页源数据                                  str
+        self._content = None
+        # lxml解析数据                               etree
+        self._html = None
 
-        #print(word)
-        #音标
-        pronu=text.xpath('//*[@id="phrsListTab"]/h2/div/span/span')
-        pronounce=[]
-        for i in pronu:
-            pronounce.append(i.text)
-        #print(pronounce)
-        send.setdefault("pronounce",pronounce)
+        # 例句部分
+        # 例句源数据                                 str
+        self._lj_con = None
+        # 例句解析数据                                etree
+        self._lj_html = None
+        # 例句数据                                   list
+        # 双语例句
+        self.lj_db = None
+        # 原声例句
+        self.lj_or=None
+        # 权威例句
+        self.lj_au=None
+        # 例句状态                                   int
+        self.lj_status = None
 
-        #释义
-        Simple_mean=text.xpath('//*[@id="phrsListTab"]/div/ul/li')
-        Simple_meaning=[]
-        for i in Simple_mean:
-            Simple_meaning.append(i.text.replace('\n','').replace(' ',''))
-        #print(Simple_meaning)
-        send.setdefault("Simple-meaning",Simple_meaning)
+        # 百科部分
+        # 百科源数据                                 str
+        self._bk_con = None
+        # 百科解析数据                                etree
+        self._bk_html = None
+        # 百科数据                                   list
+        self.bk = None
+        # 百科状态                                   int
+        self.bk_status = None
 
-        #释义（中文->En
-        En_mean=text.xpath('//*[@id="phrsListTab"]/div/ul/p/span/a')
-        En_meaning=[]
-        for i in En_mean:
-            En_meaning.append(i.text)
-        send.setdefault("Chinese-meaning",En_meaning)
+        # 主页部分
+        # 发音 (一般A为英，B为美，支持拼音)               str
+        self.pronunA=None
+        self.pronunB=None
+        # 链接                                        str
+        self.pronunAc=None
+        self.pronunBc=None
 
-        #拼音
-        ping=text.xpath('//*[@id="phrsListTab"]/h2/span[2]')
-        pin_yin=[]
-        for i in ping:
-            pin_yin.append(i.text)
-        send.setdefault("Pin-Yin",pin_yin)
+        # 释义                                        list
+        # 简明
+        self.brief_meaning=None
+        # 柯林斯
+        self.collins_meaning=None
+        # 新汉英
+        self.nce=None
+        # 现代汉语
+        self.ccl=None
 
-        #中文拼音意思
-        Ch_mean=text.xpath('//*[@id="phrsListTab"]/div/ul/li')
-        Ch_meaning=[]
-        for i in Ch_mean:
-            Ch_meaning.append(i.text)
-        send.setdefault('Ch-meaning',Ch_meaning)
+        # 翻译                                        str
+        self.trans=None
 
-        #网络释义
-        i_m_t=re.compile('''<a href="#" title="详细释义" rel="#rw1" class="sp do-detail">&nbsp;</a>
-        <span>
-                (.+?)</span>
-    </div>
-    <p class="collapse-content">
-    (.+?)</p>
-            <p class="collapse-content via">(.+?)<span class="sl">-</span><a href=".+?">相关网页</a></p>
-    </div>
-                <div class="wt-container wt-collapse">''')
-        Internet_mean_type=i_m_t.findall(html)
-        #print(Internet_mean_type)
-        send.setdefault("Internet-meaning",Internet_mean_type)
+        # 特殊释义                                     list
+        # 网络释义
+        self.web=None
+        # 英英释义
+        self.en=None
+        # 专业释义
+        self.pro=None
 
-        #短语
-        short=text.xpath('//*[@id="webPhrase"]/p/span/a')
-        ph=text.xpath('//*[@id="webPhrase"]/p/text()[1]')
-        a=re.compile('''<p class="wordGroup">
-  
-      <span class="contentTitle"><a class="search-js" href=".+?">(.+?)</a></span>
-                          (.+?)
-              </p>''',re.DOTALL)
-        phrase=a.findall(html)
-        phr=[]
-        for i in phrase:
+        # 短语                                        list
+        self.phrase=None
 
-            c=i[1].replace('\t','').replace('\n','')
-            b=re.compile('<(.+?)>').findall(c)
-            d=re.compile('<(.+?)>').findall(i[0])
-            e=i[0].replace('\t','')
-            for h in b:
+        # 词典短语                                      list
+        self.dict_ph=None
+        #词源                                         list
+        self.ph_ori=None
 
-                c=c.replace('<'+h+'>','')
-            for h in d:
-                e=e.replace('<'+h+'>','')
-            phr.append((e.replace('\n','').replace('\t','').replace('<a>','').replace('</a>','').replace('<p>','').replace('</p>',''),c.replace('<spanclass=gray>','').replace('</span>','').replace('\n','')))
-        '''for i in range(len(short)):
-            phrase.append((short[i].text,ph[i].replace(' ','').replace('\n','').replace('\t','')))'''
-        #print(phr)
-        send.setdefault("Phrase",phr)
+        # 猜你想搜                                      list
+        self.guess=None
 
-        #专业释义
-        '''further=text.xpath('//*[@id="tPETrans-type-list"]/a')
-        further_mean=text.xpath('//*[@id="tPETrans-all-trans"]/li/div/span[1]')
-        further_list=[]
-        for i in range(len(further)):
-            #print(further_mean[i].text)
-            further_list.append((further[i].text,further_mean[i].text.replace('\n','') ))
-        #print(further_list)
-        send.setdefault('Profession',further_list)'''
+        # 提示                                        str
+        self.tip=None
 
-        #句子
-        # print(html)
-        # sen=re.compile('<span id=.+? onmouseover=.+? onmouseout="unhlgt.+?>(.+?)</span><span>')
-        # sen=sen.findall(html)
-        # sentence=[]
-        # for i in sen:
-        #     sentence.append(i)
-        # print(sentence)
 
-        sen=text.xpath('/html/body/div[1]/div[2]/div[1]/div[2]/div[2]/div/div/div[1]/ul/li/p/span')
-        sentence1=[]
-        for i in sen:
-            sentence1.append(i.text)
-        #print(sentence1)
-        sen=text.xpath('/html/body/div[1]/div[2]/div[1]/div[2]/div[2]/div/div/div/ul/li/p/span/b')
-        sentence=[]
-        for i in sen:
-            sentence.append(i.text)
-        #print(sentence)
-        for h in range(len(sentence)):
-            for i in range(len(sentence1)):
-                if sentence1[i]==None:
-                    sentence1[i]='<font color=dodgerblue face="微软雅黑" size=4><b>'+sentence[h]+'</b></font>'
-                    break
-        #print(sentence1)
-        group=[]
-        senten=''
-        #print(sentence)
-        for i in sentence1:
-            if  ('.' not in i) and ('。' not in i):
-                #print(i)
-                senten+=i
-            else:
-                group.append((senten+i))
-                senten=''
-        #print(group)
-        send.setdefault("Sentence",group)
+    def getExample(self):
+        lj=[]
 
+    def __ReloadStatus__(self):
+        # 清空当前状态
+        # 网页response                               request
+        self.__response = None
+        # 记录最后一次请求的请求状态                     int
+        self.status = None
+        # 记录上一次请求是否成功                        bool
+        self.if_suc = False
+        # 网页源数据                                  str
+        self._content = None
+        # lxml解析数据                               etree
+        self._html = None
+
+        # 例句部分
+        # 例句源数据                                 str
+        self._lj_con = None
+        # 例句解析数据                                etree
+        self._lj_html = None
+        # 例句数据                                   list
+        # 双语例句
+        self.lj_db = None
+        # 原声例句
+        self.lj_or = None
+        # 权威例句
+        self.lj_au = None
+        # 例句状态                                   int
+        self.lj_status = None
+
+        # 百科部分
+        # 百科源数据                                 str
+        self._bk_con = None
+        # 百科解析数据                                etree
+        self._bk_html = None
+        # 百科数据                                   list
+        self.bk = None
+        # 百科状态                                   int
+        self.bk_status = None
+
+        # 主页部分
+        # 发音 (一般A为英，B为美，支持拼音)               str
+        self.pronunA = None
+        self.pronunB = None
+        # 链接                                        str
+        self.pronunAc = None
+        self.pronunBc = None
+
+        # 释义                                        list
+        # 简明
+        self.brief_meaning = None
+        # 柯林斯
+        self.collins_meaning = None
+        # 新汉英
+        self.nce = None
+        # 现代汉语
+        self.ccl = None
+
+        # 翻译                                        str
+        self.trans = None
+
+        # 特殊释义                                     list
+        # 网络释义
+        self.web = None
+        # 英英释义
+        self.en = None
+        # 专业释义
+        self.pro = None
+
+        # 短语                                        list
+        self.phrase = None
+
+        # 词典短语                                      list
+        self.dict_ph = None
+        # 词源                                         list
+        self.ph_ori = None
+
+        # 猜你想搜                                      list
+        self.guess = None
+
+        # 提示                                        str
+        self.tip = None
+
+    def _encode(self, s: str):
+        st = s.replace("/", "/%2F").replace("%", "%25").replace(" ", "%20")
+        st = st.replace("!", "%21")
+        st = st.replace('"', "%22")
+        st = st.replace("#", '%23')
+        st = st.replace("$", "%24")
+        st = st.replace("&", "26")
+        st = st.replace("'", '%27')
+        st = st.replace("(", "%28")
+        st = st.replace(")", "%29")
+        st = st.replace("*", "%2A")
+        st = st.replace("+", "%2B")
+        st = st.replace(",", "%2C")
+        st = st.replace("-", "%2D")
+        st = st.replace(".", "%2E")
+        st=st.replace(":","%3A")
+        return st
+
+    def setObj(self, obj: str):
+        self._obj = self._encode(obj)
+
+    def __GetContent__(self):
+        # 获取第一页数据
         try:
-            other=text.xpath('/html/body/div[1]/div[2]/div[1]/div[2]/div[2]/div[1]/div[2]/p')
-            for i in other:
-                i=i.text
-            ret=''
-            num=0
-            for h in range(len(i)):
-                if i[h]!='[' and i[h]!=' ' and i[h]!=']':
-                    ret+=i[h]
-            ret=ret.replace('\n',':')
-            rest=''
-            now=0
-            for i in ret:
-                if i ==':':
-                    num+=1
+            # 刷新状态
+            self.__ReloadStatus__()
+            # 发送请求
+            self.__response = requests.get(self.o_url[0] +
+                                           self._obj +
+                                           self.o_url[1],
+                                           headers=self.Head)
+            # 获取响应码 & 更新状态
+            self.status = self.__response.status_code
+            self.if_suc = True
+            # 获取网页数据
+            self._content = self.__response.text
+            self._html = etree.HTML(self._content)
 
-                if num%2!=0 and num!=1 and i==':':
-                    rest+=' ; '
-                elif now!=0:
-                        rest+=i
-                now+=1
-            if len(rest)>6:
-                send.setdefault('Others','['+rest+']')
-            else:
-                send.setdefault('Others','')
-        except:
-            print('others error')
-        try:
-            guess_e=text.xpath('/html/body/div[1]/div[2]/div[1]/div[2]/div[2]/div[1]/div/p/span/a')
-            e_=[]
-            for i in guess_e:
-                e_.append(i.text.replace('\n',''))
-            guess_c=text.xpath('/html/body/div[1]/div[2]/div[1]/div[2]/div[2]/div[1]/div/p/text()')
-            c_=[]
-            for i in guess_c:
-                i=i.replace('\n','').replace(' ','')
-                if i!='':
-                    c_.append(i)
-            guess=[]
-            print(e_,c_)
-            for i in range(len(e_)):
-                guess.append((e_[i],c_[i]))
-            send.setdefault('Guess',guess)
-        except:
-            send.setdefault('Guess',[])
+            # 获取例句
+            try:
+                self.__response = requests.get(self.o_url[0] +
+                                               self.lj_pre+
+                                               self._obj +
+                                               self.o_url[1],
+                                               headers=self.Head)
+                # 获取例句数据
+                self._lj_con= self.__response.text
+                self._lj_html=etree.HTML(self._lj_con)
 
+            except requests.exceptions.RequestException as er:
+                print(self.__prefix,
+                      "RequestError: No example information was available or failed to request for data.")
+                print(type(er), " | ", er)
+                self.lj_status = re.search(r"(?<=port=)\d+", str(er)).group(0)
 
+            # 获取百科
+            try:
+                self.__response = requests.get(self.o_url[0] +
+                                               self.bk_pre +
+                                               self._obj +
+                                               self.o_url[1],
+                                               headers=self.Head)
+                # 获取例句数据
+                self._bk_con = self.__response.text
+                self._bk_html = etree.HTML(self._bk_con)
 
-        return send
+            except requests.exceptions.RequestException as er:
+                print(self.__prefix,
+                      "RequestError: No encyclopedia information was available or failed to request for data.")
+                print(type(er), " | ", er)
+                self.bk_status = re.search(r"(?<=port=)\d+", str(er)).group(0)
+
+        except requests.exceptions.RequestException as er:
+            print(self.__prefix, "RequestError: Failed to request for data.")
+            print(type(er), " | ", er)
+            self.status = re.search(r"(?<=port=)\d+", str(er)).group(0)
+
 
 if __name__ == '__main__':
-    a=Search_words()
-    print("| PyTranslator")
-    print("| Version: 0.1.6 beta")
-    print("| 按回车键开始检索，输入 'exit()' 以退出")
-    while True:
-        c=str(input("\n请输入要查询的单词\n查询>>>"))
-        if c=='exit()':
-            sys.exit()
-        d=a.Simple_search(c)
-        print("\n您查询的单词是：\n"+d['Word']+"\n")
-        if d['pronounce']!=[]:
-            print("它的音标是：\n"+d['pronounce'][0]+" | 英 & "+d['pronounce'][1]+' 美')
-            print("\n它的意思是：")
-            for i in d['Simple-meaning']:
-                print(i)
-
-
-        print("\n它的网络释义有：\n")
-        for i in d['Internet-meaning']:
-            for h in range(len(i)):
-                if h==0:
-                    print(i[h])
-                else:
-                    print("     |"+i[h].replace('<b>','-').replace('</b>','-'))
-
-        print("\n与它相关的词组有：\n")
-        for h in d['Phrase']:
-            print(h[0]+' ： '+h[1].replace(' ','').replace('\n',''))
+    a = TYI()
+    a.__GetContent__()
+    print(a.status)

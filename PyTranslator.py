@@ -228,3 +228,5 @@ if __name__ == '__main__':
         print("\n与它相关的词组有：\n")
         for h in d['Phrase']:
             print(h[0]+' ： '+h[1].replace(' ','').replace('\n',''))
+
+        print(d)

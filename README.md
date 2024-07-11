@@ -1,4 +1,4 @@
-# PyTranslator
+# TO's Youdao Interfacce
 ## 一个基于Python爬虫的有道翻译接口
 > 目前只支持英译中/中译英 \
 > 作者很懒，几乎不更新/维护 \
