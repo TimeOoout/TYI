@@ -13,7 +13,7 @@ import requests
 6.专业释义 /
 7.英英释义 /
 8.短语    /
-9.双语例句
+9.双语例句 /
 10.原声例句
 11.权威例句
 12.词典短语
@@ -42,6 +42,14 @@ class TYI:
 
         # 翻译对象，自动将 space & / & % 替换成URL编码   str
         self._obj = None
+        # 获取单词发音音频链接
+        self.get_word_pronunciation=True
+        # 获取双语例句音频链接
+        self.get_bilingual_ex_pronunciation=True
+        # 获取原声例句音频链接
+        self.get_original_ex_pronunciation = True
+        # 获取权威例句音频链接
+        self.get_authoritative_ex_pronunciation = True
         # http标头                                   dict
         self.Head = head
         # Original_Url                              tuple*2
@@ -170,14 +178,15 @@ class TYI:
         if self.pinyin == []:
             if self.pronun == []:
                 self.pronun = None
-            # 1是英式2是美式，中文只有拼音没有发音，下载到了也只有空文件
-            self.pronunc = ["https://dict.youdao.com/dictvoice?audio=" + self._obj + "&type=1",
-                            "https://dict.youdao.com/dictvoice?audio=" + self._obj + "&type=2"]
-            self.pinyin = None
-            response = requests.head(self.pronunc[0], headers=self.Head)
-            filesize = int(response.headers['Content-Length'])
-            if filesize <= 1920:
-                self.pronunc = None
+            if self.get_word_pronunciation:
+                # 1是英式2是美式，中文只有拼音没有发音，下载到了也只有空文件
+                self.pronunc = ["https://dict.youdao.com/dictvoice?audio=" + self._obj + "&type=1",
+                                "https://dict.youdao.com/dictvoice?audio=" + self._obj + "&type=2"]
+                self.pinyin = None
+                response = requests.head(self.pronunc[0], headers=self.Head)
+                filesize = int(response.headers['Content-Length'])
+                if filesize <= 1920:
+                    self.pronunc = None
         else:
             self.pronun = None
             self.pinyin = self.pinyin[0]
@@ -309,6 +318,7 @@ class TYI:
 
     def __GetBilingualExample__(self):
         groups = self._lj_db_html.xpath('//*/ul[@class="ol"]/li')
+        order=None
         if groups != []:
             self.lj_db = []
             for i in groups:
@@ -324,20 +334,39 @@ class TYI:
                         single.append(sen)
                     else:
                         single.append(detail[0])
-                response = requests.head("https://dict.youdao.com/dictvoice?audio=" + single[0] + "&type=1",
-                                         headers=self.Head)
-                filesize = int(response.headers['Content-Length'])
-                if filesize <= 1920:
-                    response = requests.head("https://dict.youdao.com/dictvoice?audio=" + single[1] + "&type=1",
-                                             headers=self.Head)
-                    filesize = int(response.headers['Content-Length'])
-                    if filesize > 1920:
-                        single.append("https://dict.youdao.com/dictvoice?audio=" + single[1] + "&type=1")
-                        single.append("https://dict.youdao.com/dictvoice?audio=" + single[1] + "&type=2")
-                else:
+                if self.get_bilingual_ex_pronunciation:
+                    if order==None:
+                        response = requests.head("https://dict.youdao.com/dictvoice?audio=" + single[0] + "&type=1",
+                                                 headers=self.Head)
+                        filesize = int(response.headers['Content-Length'])
+                        if filesize <= 1920:
+                            response = requests.head("https://dict.youdao.com/dictvoice?audio=" + single[1] + "&type=1",
+                                                     headers=self.Head)
+                            filesize = int(response.headers['Content-Length'])
+                            if filesize > 1920:
+                                order=1
+                        else:
+                            order=0
+                    single.append("https://dict.youdao.com/dictvoice?audio=" + single[order] + "&type=1")
+                    single.append("https://dict.youdao.com/dictvoice?audio=" + single[order] + "&type=2")
+                self.lj_db.append(single)
+
+    def __GetOriginalExample__(self):
+        groups = self._lj_or_html.xpath('//*/ul[@class="ol"]/li')
+        if groups != []:
+            self.lj_or = []
+            for i in groups:
+                group = i.xpath("./p")
+                single = []
+                for h in group:
+                    ori = h.xpath('string(.)')
+                    if ori != "":
+                        single.append(ori.replace("\n","").replace("\t","").replace("  ",""))
+
+                if self.get_original_ex_pronunciation:
                     single.append("https://dict.youdao.com/dictvoice?audio=" + single[0] + "&type=1")
                     single.append("https://dict.youdao.com/dictvoice?audio=" + single[0] + "&type=2")
-                self.lj_db.append(single)
+                self.lj_or.append(single)
 
     def __RefreshStatus__(self):
         # 清空当前状态
@@ -463,29 +492,32 @@ class TYI:
         if obj is not None:
             self.setObj(obj)
         # 刷新状态
-        self.__RefreshStatus__()
-        # 获取所有数据
-        self.__GetAllContent__()
-        # 解析发音信息
-        self.__GetPronunciation__()
-        # 解析翻译
-        self.__GetTranslation__()
-        # 解析简明释义
-        self.__GetBriefMeaning__()
-        # 获取标签
-        self.__GetLabel__()
-        # 获取时态
-        self.__GetTense__()
-        # 获取网络释义
-        self.__GetWebMeaning__()
-        # 获取专业释义
-        self.__GetProMeaning__()
-        # 获取英英释义
-        self.__GetEngMeaning__()
-        # 获取短语
-        self.__GetPhrases__()
-        # 获取双语例句
-        self.__GetBilingualExample__()
+        #self.__RefreshStatus__()
+        ## 获取所有数据
+        #self.__GetAllContent__()
+        self.__GetOrEx__()
+        ## 解析发音信息
+        #self.__GetPronunciation__()
+        ## 解析翻译
+        #self.__GetTranslation__()
+        ## 解析简明释义
+        #self.__GetBriefMeaning__()
+        ## 获取标签
+        #self.__GetLabel__()
+        ## 获取时态
+        #self.__GetTense__()
+        ## 获取网络释义
+        #self.__GetWebMeaning__()
+        ## 获取专业释义
+        #self.__GetProMeaning__()
+        ## 获取英英释义
+        #self.__GetEngMeaning__()
+        ## 获取短语
+        #self.__GetPhrases__()
+        ## 获取双语例句
+        #self.__GetBilingualExample__()
+        # 获取原声例句
+        self.__GetOriginalExample__()
 
     def __GetAllContent__(self):
         # 获取第一页数据
@@ -527,7 +559,7 @@ if __name__ == '__main__':
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 "
             "Safari/537.36 Edg/95.0.1020.44 "
     })
-    a.setObj("do")
+    a.setObj("你好")
     a.queryAll()
     print("拼音       ：", a.pinyin)
     print("音标       ：", a.pronun)
@@ -543,3 +575,4 @@ if __name__ == '__main__':
     print("英英释义数据来源：", a.en_detail)
     print("短语       ：", a.phrase)
     print("双语例句    ：", a.lj_db)
+    print("原声例句    ：", a.lj_or)
