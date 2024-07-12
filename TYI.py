@@ -17,10 +17,10 @@ import requests
 10.原声例句                     /
 11.权威例句                     /
 12.词典短语                     × 
-13.同近义词
-14.同根词
+13.同近义词                     /
+14.同根词                      maybe
 15.词源                        maybe
-16.词语辨析
+16.词语辨析                     /
 17.百科                        old_edition
 18.标签                        /
 19.提示                        /
@@ -308,7 +308,6 @@ class TYI:
                                        i.xpath("./text()")[1].replace("\n", '').replace("  ", ""))
         else:
             wordgroup = self._lj_html.xpath('//*/div[@id="webPhrase"]/div[@class="title"]/following-sibling::*')
-            print(wordgroup)
             if wordgroup != []:
                 self.phrase = {}
                 wordgroup.pop()
@@ -406,6 +405,38 @@ class TYI:
             for i in range(len(ex)):
                 wordgroup = word[i].xpath('./span/a/text()')
                 self.synonym.append([[ex[i]], wordgroup])
+
+    '''def __GetCognates__(self):
+        groups = self._lj_html.xpath('//*/div[@id="relWordTab"]/text()')
+        temp = []
+        for i in range(len(groups)):
+            groups[i] = groups[i].replace("\n", "").replace(" ", "")
+            if groups[i] != "":
+                temp.append(groups[i])
+        trans=self._lj_html.xpath('//*/div[@id="relWordTab"]/p[@class="wordGroup"]/text()')'''
+
+    def __GetCritic__(self):
+        groups = self._lj_html.xpath(
+            '//*/div[@id="discriminate"]/div[@class="wt-container"]/div[@class="title"]/span/text()')
+        if groups != []:
+            self.critic = {}
+            group = self._lj_html.xpath(
+                '//*/div[@id="discriminate"]/div[@class="wt-container"]/div[@class="collapse-content"]/p/text()')
+            group.pop()
+            group.pop()
+            exp = self._lj_html.xpath(
+                '//*/div[@id="discriminate"]/div[@class="wt-container"]/div[@class="collapse-content"]/div[@class="wordGroup"]/p/text()')
+            a = []
+            for i in exp:
+                i = i.replace(" ", "").replace("\n", "")
+                if i != '':
+                    a.append(i)
+            b = []
+            for i in range(len(groups)):
+                b = groups[i].split(',')
+                self.critic.setdefault(groups[i], group[i])
+                for h in range(len(b)):
+                    self.critic.setdefault(b[h], a[h])
 
     def __RefreshStatus__(self):
         # 清空当前状态
@@ -520,7 +551,7 @@ class TYI:
         # 猜你想搜                                      list
         self.guess = None
 
-        # 提示                                        str
+        # 提示                                          str
         self.tip = None
 
     def setObj(self, obj: str):
@@ -532,39 +563,40 @@ class TYI:
             self.setObj(obj)
         # 刷新状态
         self.__RefreshStatus__()
-        ## 获取所有数据
-        # self.__GetAllContent__()
-        self.__GetOldPage__()
-        ## 解析发音信息
-        # self.__GetPronunciation__()
-        ## 解析翻译
-        # self.__GetTranslation__()
-        ## 解析简明释义
-        # self.__GetBriefMeaning__()
-        ## 获取标签
-        # self.__GetLabel__()
-        ## 获取时态
-        # self.__GetTense__()
-        ## 获取网络释义
-        # self.__GetWebMeaning__()
-        ## 获取专业释义
-        # self.__GetProMeaning__()
-        ## 获取英英释义
-        # self.__GetEngMeaning__()
-        ## 获取短语
-        # self.__GetPhrases__()
-        ## 获取双语例句
-        # self.__GetBilingualExample__()
+        # 获取所有数据
+        self.__GetAllContent__()
+        # 解析发音信息
+        self.__GetPronunciation__()
+        # 解析翻译
+        self.__GetTranslation__()
+        # 解析简明释义
+        self.__GetBriefMeaning__()
+        # 获取标签
+        self.__GetLabel__()
+        # 获取时态
+        self.__GetTense__()
+        # 获取网络释义
+        self.__GetWebMeaning__()
+        # 获取专业释义
+        self.__GetProMeaning__()
+        # 获取英英释义
+        self.__GetEngMeaning__()
+        # 获取短语
+        self.__GetPhrases__()
+        # 获取双语例句
+        self.__GetBilingualExample__()
         # 获取原声例句
-        # self.__GetOriginalExample__()
+        self.__GetOriginalExample__()
         # 获取权威例句
-        # self.__GetAuthoritativeExample__()
+        self.__GetAuthoritativeExample__()
         # 猜你想搜
-        # self.__GetMaybe__()
+        self.__GetMaybe__()
         # 获取提示信息
-        # self.__GetTip__()
+        self.__GetTip__()
         # 获取同/近义词
         self.__GetSynonyms__()
+        # 获取词语辨析
+        self.__GetCritic__()
 
     def __GetAllContent__(self):
         # 获取第一页数据
@@ -627,3 +659,4 @@ if __name__ == '__main__':
     print("猜你想搜    ：", a.guess)
     print("提示信息    ：", a.tip)
     print("同/近义词   ：", a.synonym)
+    print("词语辨析    ：", a.critic)
