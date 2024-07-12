@@ -116,6 +116,104 @@ class TYI:
         if self.tense == {}:
             self.tense = None
 
+    def __GetOldPage__(self):
+        # 获取旧版词典信息
+        try:
+            self.__response = requests.get(self._old_url + self._obj,
+                                           headers=self.Head)
+            # 获取例句数据
+            self._lj_con = self.__response.text
+            self._lj_html = etree.HTML(self._lj_con)
+
+        except requests.exceptions.RequestException as er:
+            print(self.__prefix,
+                  "RequestError: Failed to request for data.")
+            print(type(er), " | ", er)
+            self.lj_status = re.search(r"(?<=port=)\d+", str(er)).group(0)
+
+    def __GetDbEx__(self):
+        # 双语例句
+        try:
+            self.__response = requests.get(self._lj_db_url[0] + self._obj + self._lj_db_url[1],
+                                           headers=self.Head)
+            # 获取例句数据
+            self._lj_db_con = self.__response.text
+            self._lj_db_html = etree.HTML(self._lj_db_con)
+
+        except requests.exceptions.RequestException as er:
+            print(self.__prefix,
+                  "RequestError: Failed to request for data.")
+            print(type(er), " | ", er)
+            self.lj_status = re.search(r"(?<=port=)\d+", str(er)).group(0)
+
+    def __GetOrEx__(self):
+        # 原声例句
+        try:
+            self.__response = requests.get(self._lj_or_url[0] + self._obj + self._lj_or_url[1],
+                                           headers=self.Head)
+            # 获取例句数据
+            self._lj_or_con = self.__response.text
+            self._lj_or_html = etree.HTML(self._lj_or_con)
+
+        except requests.exceptions.RequestException as er:
+            print(self.__prefix,
+                  "RequestError: Failed to request for data.")
+            print(type(er), " | ", er)
+            self.lj_status = re.search(r"(?<=port=)\d+", str(er)).group(0)
+
+    def __GetAuEx__(self):
+        # 权威例句
+        try:
+            self.__response = requests.get(self._lj_au_url[0] + self._obj + self._lj_au_url[1],
+                                           headers=self.Head)
+            # 获取例句数据
+            self._lj_au_con = self.__response.text
+            self._lj_au_html = etree.HTML(self._lj_au_con)
+
+        except requests.exceptions.RequestException as er:
+            print(self.__prefix,
+                  "RequestError: Failed to request for data.")
+            print(type(er), " | ", er)
+            self.lj_status = re.search(r"(?<=port=)\d+", str(er)).group(0)
+
+    def __GetBk__(self):
+        # 获取百科
+        try:
+            self.__response = requests.get(self._o_url[0] +
+                                           self._bk_pre +
+                                           self._obj +
+                                           self._o_url[1],
+                                           headers=self.Head)
+            # 获取例句数据
+            self._bk_con = self.__response.text
+            self._bk_html = etree.HTML(self._bk_con)
+
+        except requests.exceptions.RequestException as er:
+            print(self.__prefix,
+                  "RequestError: No encyclopedia information was available or failed to request for data.")
+            print(type(er), " | ", er)
+            self.bk_status = re.search(r"(?<=port=)\d+", str(er)).group(0)
+
+    def __GetNewPage__(self):
+        try:
+            # 发送请求
+            self.__response = requests.get(self._o_url[0] +
+                                           self._obj +
+                                           self._o_url[1],
+                                           headers=self.Head)
+            # 获取响应码 & 更新状态
+            self.status = self.__response.status_code
+            self.if_suc = True
+            # 获取网页数据
+            self._content = self.__response.text
+            self._html = etree.HTML(self._content)
+
+        except requests.exceptions.RequestException as er:
+            print(self.__prefix, "RequestError: Failed to request for data.")
+            print(type(er), " | ", er)
+            self.status = re.search(r"(?<=port=)\d+", str(er)).group(0)
+
+
     def __RefreshStatus__(self):
         # 清空当前状态
         # 网页response                               request
@@ -238,7 +336,7 @@ class TYI:
         # 刷新状态
         self.__RefreshStatus__()
         # 获取所有数据
-        self.__GetContent__()
+        self.__GetAllContent__()
         # 解析发音信息
         self.__GetPronunciation__()
         # 解析翻译
@@ -250,98 +348,21 @@ class TYI:
         # 获取时态
         self.__GetTense__()
 
-    def __GetContent__(self):
+    def __GetAllContent__(self):
         # 获取第一页数据
-        try:
-            # 发送请求
-            self.__response = requests.get(self._o_url[0] +
-                                           self._obj +
-                                           self._o_url[1],
-                                           headers=self.Head)
-            # 获取响应码 & 更新状态
-            self.status = self.__response.status_code
-            self.if_suc = True
-            # 获取网页数据
-            self._content = self.__response.text
-            self._html = etree.HTML(self._content)
+        self.__GetNewPage__()
+        # 获取旧版数据
+        self.__GetOldPage__()
+        # 获取双语例句
+        self.__GetDbEx__()
+        # 获取原声例句
+        self.__GetOrEx__()
+        # 获取权威例句
+        self.__GetAuEx__()
+        # 获取百科数据
+        self.__GetBk__()
 
-            # 获取旧版词典信息
-            try:
-                self.__response = requests.get(self._old_url + self._obj,
-                                               headers=self.Head)
-                # 获取例句数据
-                self._lj_con = self.__response.text
-                self._lj_html = etree.HTML(self._lj_con)
 
-            except requests.exceptions.RequestException as er:
-                print(self.__prefix,
-                      "RequestError: Failed to request for data.")
-                print(type(er), " | ", er)
-                self.lj_status = re.search(r"(?<=port=)\d+", str(er)).group(0)
-
-            # 双语例句
-            try:
-                self.__response = requests.get(self._lj_db_url[0] + self._obj + self._lj_db_url[1],
-                                               headers=self.Head)
-                # 获取例句数据
-                self._lj_db_con = self.__response.text
-                self._lj_db_html = etree.HTML(self._lj_db_con)
-
-            except requests.exceptions.RequestException as er:
-                print(self.__prefix,
-                      "RequestError: Failed to request for data.")
-                print(type(er), " | ", er)
-                self.lj_status = re.search(r"(?<=port=)\d+", str(er)).group(0)
-
-            # 原声例句
-            try:
-                self.__response = requests.get(self._lj_or_url[0] + self._obj + self._lj_or_url[1],
-                                               headers=self.Head)
-                # 获取例句数据
-                self._lj_or_con = self.__response.text
-                self._lj_or_html = etree.HTML(self._lj_or_con)
-
-            except requests.exceptions.RequestException as er:
-                print(self.__prefix,
-                      "RequestError: Failed to request for data.")
-                print(type(er), " | ", er)
-                self.lj_status = re.search(r"(?<=port=)\d+", str(er)).group(0)
-
-            # 双语例句
-            try:
-                self.__response = requests.get(self._lj_au_url[0] + self._obj + self._lj_au_url[1],
-                                               headers=self.Head)
-                # 获取例句数据
-                self._lj_au_con = self.__response.text
-                self._lj_au_html = etree.HTML(self._lj_au_con)
-
-            except requests.exceptions.RequestException as er:
-                print(self.__prefix,
-                      "RequestError: Failed to request for data.")
-                print(type(er), " | ", er)
-                self.lj_status = re.search(r"(?<=port=)\d+", str(er)).group(0)
-
-            # 获取百科
-            try:
-                self.__response = requests.get(self._o_url[0] +
-                                               self._bk_pre +
-                                               self._obj +
-                                               self._o_url[1],
-                                               headers=self.Head)
-                # 获取例句数据
-                self._bk_con = self.__response.text
-                self._bk_html = etree.HTML(self._bk_con)
-
-            except requests.exceptions.RequestException as er:
-                print(self.__prefix,
-                      "RequestError: No encyclopedia information was available or failed to request for data.")
-                print(type(er), " | ", er)
-                self.bk_status = re.search(r"(?<=port=)\d+", str(er)).group(0)
-
-        except requests.exceptions.RequestException as er:
-            print(self.__prefix, "RequestError: Failed to request for data.")
-            print(type(er), " | ", er)
-            self.status = re.search(r"(?<=port=)\d+", str(er)).group(0)
 
     @staticmethod
     def _encode(s: str):
