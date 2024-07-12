@@ -14,8 +14,8 @@ import requests
 7.英英释义 /
 8.短语    /
 9.双语例句 /
-10.原声例句
-11.权威例句
+10.原声例句/
+11.权威例句/
 12.词典短语
 13.同近义词
 14.同根词
@@ -23,8 +23,8 @@ import requests
 16.词语辨析
 17.百科
 18.标签   /
-19.提示
-20.猜你想搜（输入了可能错误的单词）
+19.提示   /
+20.猜你想搜（输入了可能错误的单词） /
 21.柯林斯词典
 22.新英汉词典
 23.现代汉语
@@ -43,9 +43,9 @@ class TYI:
         # 翻译对象，自动将 space & / & % 替换成URL编码   str
         self._obj = None
         # 获取单词发音音频链接
-        self.get_word_pronunciation=True
+        self.get_word_pronunciation = True
         # 获取双语例句音频链接
-        self.get_bilingual_ex_pronunciation=True
+        self.get_bilingual_ex_pronunciation = True
         # 获取原声例句音频链接
         self.get_original_ex_pronunciation = True
         # 获取权威例句音频链接
@@ -318,7 +318,7 @@ class TYI:
 
     def __GetBilingualExample__(self):
         groups = self._lj_db_html.xpath('//*/ul[@class="ol"]/li')
-        order=None
+        order = None
         if groups != []:
             self.lj_db = []
             for i in groups:
@@ -335,7 +335,7 @@ class TYI:
                     else:
                         single.append(detail[0])
                 if self.get_bilingual_ex_pronunciation:
-                    if order==None:
+                    if order == None:
                         response = requests.head("https://dict.youdao.com/dictvoice?audio=" + single[0] + "&type=1",
                                                  headers=self.Head)
                         filesize = int(response.headers['Content-Length'])
@@ -344,9 +344,9 @@ class TYI:
                                                      headers=self.Head)
                             filesize = int(response.headers['Content-Length'])
                             if filesize > 1920:
-                                order=1
+                                order = 1
                         else:
-                            order=0
+                            order = 0
                     single.append("https://dict.youdao.com/dictvoice?audio=" + single[order] + "&type=1")
                     single.append("https://dict.youdao.com/dictvoice?audio=" + single[order] + "&type=2")
                 self.lj_db.append(single)
@@ -361,12 +361,41 @@ class TYI:
                 for h in group:
                     ori = h.xpath('string(.)')
                     if ori != "":
-                        single.append(ori.replace("\n","").replace("\t","").replace("  ",""))
+                        single.append(ori.replace("\n", "").replace("\t", "").replace("  ", ""))
 
                 if self.get_original_ex_pronunciation:
                     single.append("https://dict.youdao.com/dictvoice?audio=" + single[0] + "&type=1")
                     single.append("https://dict.youdao.com/dictvoice?audio=" + single[0] + "&type=2")
                 self.lj_or.append(single)
+
+    def __GetAuthoritativeExample__(self):
+        groups = self._lj_au_html.xpath('//*/ul[@class="ol"]/li')
+        if groups != []:
+            self.lj_au = []
+            for i in groups:
+                group = i.xpath("./p")
+                single = []
+                for h in group:
+                    ori = h.xpath('string(.)')
+                    if ori != "":
+                        single.append(ori.replace("\n", "").replace("\t", "").replace("  ", ""))
+
+                if self.get_authoritative_ex_pronunciation:
+                    single.append("https://dict.youdao.com/dictvoice?audio=" + single[0] + "&type=1")
+                    single.append("https://dict.youdao.com/dictvoice?audio=" + single[0] + "&type=2")
+                self.lj_au.append(single)
+
+    def __GetMaybe__(self):
+        group=self._html.xpath('//*/div[@data-v-10fccf05=""][@class="maybe_word"]')
+        if group!=[]:
+            self.guess=[]
+            for i in group:
+                self.guess.append([i.xpath("./a/text()")[0],i.xpath('./p/text()')])
+
+    def __GetTip__(self):
+        group=self._html.xpath('//*/span[@data-v-3ace3ba2=""][@class="no-word"]/text()')
+        if group!=[]:
+            self.tip=group[0]
 
     def __RefreshStatus__(self):
         # 清空当前状态
@@ -492,32 +521,38 @@ class TYI:
         if obj is not None:
             self.setObj(obj)
         # 刷新状态
-        #self.__RefreshStatus__()
+        self.__RefreshStatus__()
         ## 获取所有数据
-        #self.__GetAllContent__()
-        self.__GetOrEx__()
+        # self.__GetAllContent__()
+        self.__GetNewPage__()
         ## 解析发音信息
-        #self.__GetPronunciation__()
+        # self.__GetPronunciation__()
         ## 解析翻译
-        #self.__GetTranslation__()
+        # self.__GetTranslation__()
         ## 解析简明释义
-        #self.__GetBriefMeaning__()
+        # self.__GetBriefMeaning__()
         ## 获取标签
-        #self.__GetLabel__()
+        # self.__GetLabel__()
         ## 获取时态
-        #self.__GetTense__()
+        # self.__GetTense__()
         ## 获取网络释义
-        #self.__GetWebMeaning__()
+        # self.__GetWebMeaning__()
         ## 获取专业释义
-        #self.__GetProMeaning__()
+        # self.__GetProMeaning__()
         ## 获取英英释义
-        #self.__GetEngMeaning__()
+        # self.__GetEngMeaning__()
         ## 获取短语
-        #self.__GetPhrases__()
+        # self.__GetPhrases__()
         ## 获取双语例句
-        #self.__GetBilingualExample__()
+        # self.__GetBilingualExample__()
         # 获取原声例句
-        self.__GetOriginalExample__()
+        # self.__GetOriginalExample__()
+        # 获取权威例句
+        # self.__GetAuthoritativeExample__()
+        # 猜你想搜
+        # self.__GetMaybe__()
+        # 获取提示信息
+        self.__GetTip__()
 
     def __GetAllContent__(self):
         # 获取第一页数据
@@ -559,7 +594,7 @@ if __name__ == '__main__':
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 "
             "Safari/537.36 Edg/95.0.1020.44 "
     })
-    a.setObj("你好")
+    a.setObj("wrapa")
     a.queryAll()
     print("拼音       ：", a.pinyin)
     print("音标       ：", a.pronun)
@@ -576,3 +611,6 @@ if __name__ == '__main__':
     print("短语       ：", a.phrase)
     print("双语例句    ：", a.lj_db)
     print("原声例句    ：", a.lj_or)
+    print("权威例句    ：", a.lj_au)
+    print("猜你想搜    ：", a.guess)
+    print("提示信息    ：", a.tip)
