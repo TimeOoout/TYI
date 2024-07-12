@@ -5,29 +5,29 @@ import requests
 
 '''
 所有信息：
-1.发音信息 /
-2.简明释义 /
-3.翻译    /
-4.时态    /
-5.网络释义 /
-6.专业释义 /
-7.英英释义 /
-8.短语    /
-9.双语例句 /
-10.原声例句/
-11.权威例句/
-12.词典短语
+1.发音信息                      /
+2.简明释义                      /
+3.翻译                         /
+4.时态                         /
+5.网络释义                      /
+6.专业释义                      /
+7.英英释义                      /
+8.短语                         /
+9.双语例句                      /
+10.原声例句                     /
+11.权威例句                     /
+12.词典短语                     × 
 13.同近义词
 14.同根词
-15.词源
+15.词源                        maybe
 16.词语辨析
-17.百科
-18.标签   /
-19.提示   /
+17.百科                        old_edition
+18.标签                        /
+19.提示                        /
 20.猜你想搜（输入了可能错误的单词） /
 21.柯林斯词典
 22.新英汉词典
-23.现代汉语
+23.现代汉语                     maybe
 24.可能要搜（预输入猜测）
 25.可能的图片
 '''
@@ -386,16 +386,26 @@ class TYI:
                 self.lj_au.append(single)
 
     def __GetMaybe__(self):
-        group=self._html.xpath('//*/div[@data-v-10fccf05=""][@class="maybe_word"]')
-        if group!=[]:
-            self.guess=[]
+        group = self._html.xpath('//*/div[@data-v-10fccf05=""][@class="maybe_word"]')
+        if group != []:
+            self.guess = []
             for i in group:
-                self.guess.append([i.xpath("./a/text()")[0],i.xpath('./p/text()')])
+                self.guess.append([i.xpath("./a/text()")[0], i.xpath('./p/text()')])
 
     def __GetTip__(self):
-        group=self._html.xpath('//*/span[@data-v-3ace3ba2=""][@class="no-word"]/text()')
-        if group!=[]:
-            self.tip=group[0]
+        group = self._html.xpath('//*/span[@data-v-3ace3ba2=""][@class="no-word"]/text()')
+        if group != []:
+            self.tip = group[0]
+
+    def __GetSynonyms__(self):
+        groups = self._lj_html.xpath('//*/div[@id="synonyms"]/ul')
+        if groups != []:
+            self.synonym = []
+            ex = self._lj_html.xpath('//*/div[@id="synonyms"]/ul/li/text()')
+            word = self._lj_html.xpath('//*/div[@id="synonyms"]/ul/p')
+            for i in range(len(ex)):
+                wordgroup = word[i].xpath('./span/a/text()')
+                self.synonym.append([[ex[i]], wordgroup])
 
     def __RefreshStatus__(self):
         # 清空当前状态
@@ -524,7 +534,7 @@ class TYI:
         self.__RefreshStatus__()
         ## 获取所有数据
         # self.__GetAllContent__()
-        self.__GetNewPage__()
+        self.__GetOldPage__()
         ## 解析发音信息
         # self.__GetPronunciation__()
         ## 解析翻译
@@ -552,7 +562,9 @@ class TYI:
         # 猜你想搜
         # self.__GetMaybe__()
         # 获取提示信息
-        self.__GetTip__()
+        # self.__GetTip__()
+        # 获取同/近义词
+        self.__GetSynonyms__()
 
     def __GetAllContent__(self):
         # 获取第一页数据
@@ -594,7 +606,7 @@ if __name__ == '__main__':
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 "
             "Safari/537.36 Edg/95.0.1020.44 "
     })
-    a.setObj("wrapa")
+    a.setObj("do")
     a.queryAll()
     print("拼音       ：", a.pinyin)
     print("音标       ：", a.pronun)
@@ -614,3 +626,4 @@ if __name__ == '__main__':
     print("权威例句    ：", a.lj_au)
     print("猜你想搜    ：", a.guess)
     print("提示信息    ：", a.tip)
+    print("同/近义词   ：", a.synonym)
