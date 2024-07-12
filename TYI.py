@@ -9,8 +9,8 @@ import requests
 2.简明释义 /
 3.翻译    /
 4.时态    /
-5.网络释义
-6.专业释义
+5.网络释义 /
+6.专业释义 /
 7.英英释义
 8.短语
 9.双语例句
@@ -239,6 +239,55 @@ class TYI:
         if self.web == {}:
             self.web = None
 
+    def __GetProMeaning__(self):
+        # 第一个领域
+        temp1 = self._lj_html.xpath('//*/a[@hidefocus="true"][@class="p-type selected_link"]/text()')
+        # 剩下的
+        temp2 = self._lj_html.xpath('//*/a[@hidefocus="true"][@class="p-type"]/text()')
+        tempA = temp1 + temp2
+
+        # 每个领域释义
+        self.pro = {}
+        for i in range(len(tempA)):
+            self.pro.setdefault(tempA[i],
+                                self._lj_html.xpath('//*/li[@class="ptype_' + str(i) + ' types"]/div/span/text()'))
+        if self.pro == {}:
+            self.pro = None
+
+        # 数据来源信息
+        if self._lj_html.xpath('//*/div[@id="tPETrans"]/p[@class="additional"]/text()') != []:
+            self.pro_detail = self._lj_html.xpath('//*/div[@id="tPETrans"]/p[@class="additional"]/text()')[0].replace(
+                "\n", "").replace("  ", "")
+
+    def __GetEngMeaning__(self):
+        # 英英释义数据来源
+        self.en_detail = self._lj_html.xpath('//*/p[@class="via ar"]/a[@target="_blank"][@rel="nofollow"]/text()')
+        if self.en_detail != []:
+            self.en_detail = self.en_detail[0]
+        else:
+            self.en_detail = None
+
+        group = self._lj_html.xpath('//*/ul/li/span[@class="pos"]/text()')
+        if group != []:
+            # 所有词性的释义
+            exps = self._lj_html.xpath('//*/ul[@class="ol"]')
+            self.en = {}
+            # 总词性
+            for i in range(len(group)):
+                # 每个词性总共释义
+                exp = []
+                # 单个释义
+                single_all = exps[i].xpath('./li')
+                for h in range(len(single_all)):
+                    exp.append({1: single_all[h].xpath('./span[@class="def"]/text()'),
+                                2: single_all[h].xpath('./p[@class="gray"]/a/text()'),
+                                3: single_all[h].xpath('./p/em/text()')})
+
+                self.en.setdefault(group[i], exp)
+
+            head = self._lj_html.xpath('//*/h4/span[@class="phonetic"]/text()')
+            self.en.setdefault(self._obj, head)
+
     def __RefreshStatus__(self):
         # 清空当前状态
         # 网页response                               request
@@ -314,8 +363,12 @@ class TYI:
         self.web = None
         # 英英释义
         self.en = None
+        # 英英释义数据来源                              str
+        self.en_detail = None
         # 专业释义
         self.pro = None
+        # 专业释义数据来源                              str
+        self.pro_detail = None
 
         # 双语例句源码
         self._lj_db_con = None
@@ -374,6 +427,10 @@ class TYI:
         self.__GetTense__()
         # 获取网络释义
         self.__GetWebMeaning__()
+        # 获取专业释义
+        self.__GetProMeaning__()
+        # 获取英英释义
+        self.__GetEngMeaning__()
 
     def __GetAllContent__(self):
         # 获取第一页数据
@@ -415,7 +472,7 @@ if __name__ == '__main__':
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 "
             "Safari/537.36 Edg/95.0.1020.44 "
     })
-    a.setObj("你好")
+    a.setObj("do")
     a.queryAll()
     print("拼音       ：", a.pinyin)
     print("音标       ：", a.pronun)
@@ -425,3 +482,7 @@ if __name__ == '__main__':
     print("考试标签    ：", a.label)
     print("时态       ：", a.tense)
     print("网络释义    ：", a.web)
+    print("专业释义    ：", a.pro)
+    print("专业释义数据来源：", a.pro_detail)
+    print("英英释义    ：", a.en)
+    print("英英释义数据来源：", a.en_detail)
