@@ -11,8 +11,8 @@ import requests
 4.时态    /
 5.网络释义 /
 6.专业释义 /
-7.英英释义
-8.短语
+7.英英释义 /
+8.短语    /
 9.双语例句
 10.原声例句
 11.权威例句
@@ -288,6 +288,28 @@ class TYI:
             head = self._lj_html.xpath('//*/h4/span[@class="phonetic"]/text()')
             self.en.setdefault(self._obj, head)
 
+    def __GetPhrases__(self):
+        # 英语词组
+        wordgroup = self._lj_html.xpath('//*/div[@id="wordGroup"]/p[@class="wordGroup"]')
+        if wordgroup != []:
+            self.phrase = {}
+            for i in wordgroup:
+                self.phrase.setdefault(i.xpath("./span/a/text()")[0],
+                                       i.xpath("./text()")[1].replace("\n", '').replace("  ", ""))
+            wordgroup = self._lj_html.xpath('//*/div[@id="wordGroup"]/p[@class="wordGroup collapse"]')
+            for i in wordgroup:
+                self.phrase.setdefault(i.xpath("./span/a/text()")[0],
+                                       i.xpath("./text()")[1].replace("\n", '').replace("  ", ""))
+        else:
+            wordgroup = self._lj_html.xpath('//*/div[@id="webPhrase"]/div[@class="title"]/following-sibling::*')
+            print(wordgroup)
+            if wordgroup != []:
+                self.phrase = {}
+                wordgroup.pop()
+                for i in wordgroup:
+                    self.phrase.setdefault(i.xpath("./span/a/text()")[0],
+                                           i.xpath("./text()")[1].replace("\n", '').replace("  ", ""))
+
     def __RefreshStatus__(self):
         # 清空当前状态
         # 网页response                               request
@@ -358,7 +380,7 @@ class TYI:
         # 翻译                                        str
         self.trans = None
 
-        # 特殊释义                                     list
+        # 特殊释义                                     dict
         # 网络释义
         self.web = None
         # 英英释义
@@ -384,7 +406,7 @@ class TYI:
         # 权威例句解析
         self._lj_au_html = None
 
-        # 短语                                        list
+        # 短语                                        dict
         self.phrase = None
 
         # 词典短语                                      list
@@ -431,6 +453,8 @@ class TYI:
         self.__GetProMeaning__()
         # 获取英英释义
         self.__GetEngMeaning__()
+        # 获取短语
+        self.__GetPhrases__()
 
     def __GetAllContent__(self):
         # 获取第一页数据
@@ -472,7 +496,7 @@ if __name__ == '__main__':
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 "
             "Safari/537.36 Edg/95.0.1020.44 "
     })
-    a.setObj("do")
+    a.setObj("你好")
     a.queryAll()
     print("拼音       ：", a.pinyin)
     print("音标       ：", a.pronun)
@@ -486,3 +510,4 @@ if __name__ == '__main__':
     print("专业释义数据来源：", a.pro_detail)
     print("英英释义    ：", a.en)
     print("英英释义数据来源：", a.en_detail)
+    print("短语       ：", a.phrase)
