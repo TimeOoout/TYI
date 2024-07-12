@@ -174,7 +174,7 @@ class TYI:
             self.pronunc = ["https://dict.youdao.com/dictvoice?audio=" + self._obj + "&type=1",
                             "https://dict.youdao.com/dictvoice?audio=" + self._obj + "&type=2"]
             self.pinyin = None
-            response = requests.head(self.pronunc[0])
+            response = requests.head(self.pronunc[0], headers=self.Head)
             filesize = int(response.headers['Content-Length'])
             if filesize <= 1920:
                 self.pronunc = None
@@ -290,13 +290,10 @@ class TYI:
 
     def __GetPhrases__(self):
         # 英语词组
-        wordgroup = self._lj_html.xpath('//*/div[@id="wordGroup"]/p[@class="wordGroup"]')
+        wordgroup = self._lj_html.xpath(
+            '//*/div[@id="wordGroup"]/p[@class="wordGroup"] | //*/div[@id="wordGroup"]/p[@class="wordGroup collapse"]')
         if wordgroup != []:
             self.phrase = {}
-            for i in wordgroup:
-                self.phrase.setdefault(i.xpath("./span/a/text()")[0],
-                                       i.xpath("./text()")[1].replace("\n", '').replace("  ", ""))
-            wordgroup = self._lj_html.xpath('//*/div[@id="wordGroup"]/p[@class="wordGroup collapse"]')
             for i in wordgroup:
                 self.phrase.setdefault(i.xpath("./span/a/text()")[0],
                                        i.xpath("./text()")[1].replace("\n", '').replace("  ", ""))
@@ -309,6 +306,38 @@ class TYI:
                 for i in wordgroup:
                     self.phrase.setdefault(i.xpath("./span/a/text()")[0],
                                            i.xpath("./text()")[1].replace("\n", '').replace("  ", ""))
+
+    def __GetBilingualExample__(self):
+        groups = self._lj_db_html.xpath('//*/ul[@class="ol"]/li')
+        if groups != []:
+            self.lj_db = []
+            for i in groups:
+                group = i.xpath("./p")
+                single = []
+                for h in group:
+                    ori = h.xpath('./span')
+                    detail = h.xpath('./a/text()')
+                    sen = ""
+                    for g in ori:
+                        sen += g.xpath("string(.)")
+                    if sen != "":
+                        single.append(sen)
+                    else:
+                        single.append(detail[0])
+                response = requests.head("https://dict.youdao.com/dictvoice?audio=" + single[0] + "&type=1",
+                                         headers=self.Head)
+                filesize = int(response.headers['Content-Length'])
+                if filesize <= 1920:
+                    response = requests.head("https://dict.youdao.com/dictvoice?audio=" + single[1] + "&type=1",
+                                             headers=self.Head)
+                    filesize = int(response.headers['Content-Length'])
+                    if filesize > 1920:
+                        single.append("https://dict.youdao.com/dictvoice?audio=" + single[1] + "&type=1")
+                        single.append("https://dict.youdao.com/dictvoice?audio=" + single[1] + "&type=2")
+                else:
+                    single.append("https://dict.youdao.com/dictvoice?audio=" + single[0] + "&type=1")
+                    single.append("https://dict.youdao.com/dictvoice?audio=" + single[0] + "&type=2")
+                self.lj_db.append(single)
 
     def __RefreshStatus__(self):
         # 清空当前状态
@@ -455,6 +484,8 @@ class TYI:
         self.__GetEngMeaning__()
         # 获取短语
         self.__GetPhrases__()
+        # 获取双语例句
+        self.__GetBilingualExample__()
 
     def __GetAllContent__(self):
         # 获取第一页数据
@@ -496,7 +527,7 @@ if __name__ == '__main__':
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 "
             "Safari/537.36 Edg/95.0.1020.44 "
     })
-    a.setObj("你好")
+    a.setObj("do")
     a.queryAll()
     print("拼音       ：", a.pinyin)
     print("音标       ：", a.pronun)
@@ -511,3 +542,4 @@ if __name__ == '__main__':
     print("英英释义    ：", a.en)
     print("英英释义数据来源：", a.en_detail)
     print("短语       ：", a.phrase)
+    print("双语例句    ：", a.lj_db)
