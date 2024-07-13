@@ -1,4 +1,4 @@
-from TYI import TYI
+from  import TYI
 
 if __name__ == '__main__':
     a = TYI({
