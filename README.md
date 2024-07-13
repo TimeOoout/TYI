@@ -8,6 +8,17 @@
 > 
 > 仅限个人开发学习使用，<b> 请勿高强度爬虫干扰网站正常运行 </b>
 
+<p align="center">
+
+![License](https://img.shields.io/badge/license-MIT-yellow)
+![Language](https://img.shields.io/badge/language-Python-blue)
+![Documentation](https://img.shields.io/badge/documentation-yes-brightgreen)
+![TYI workflow](https://github.com/TimeOoout/TYI/actions/workflows/TYI_test.yml/badge.svg)
+
+
+</p>
+
+
 ### 新版接口-TYI
 
 > 使用方法：将release文件拷贝到需要使用的项目目录里即可 \
