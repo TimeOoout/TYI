@@ -211,8 +211,12 @@ class TYI:
                 list_c = self._html.xpath('//*/a[@data-v-8042e1b4=""][@class="point"]/text()')
                 list_c2 = self._html.xpath('//*/div[@data-v-8042e1b4=""][@class="word-exp_tran grey"]/text()')
                 self.brief_meaning = []
-                for i in range(len(list_c)):
-                    self.brief_meaning.append((lis[i], {list_c[i]: list_c2[i]}))
+                if list_c2!=[]:
+                    for i in range(len(list_c)):
+                        self.brief_meaning.append((lis[i], {list_c[i]: list_c2[i]}))
+                else:
+                    for i in range(len(list_c)):
+                        self.brief_meaning.append((lis[i], {list_c[i]: ''}))
 
     def __GetLabel__(self):
         self.label = self._html.xpath('//*/span[@data-v-8042e1b4=""][@class="exam_type-value"]/text()')
@@ -638,7 +642,7 @@ if __name__ == '__main__':
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 "
             "Safari/537.36 Edg/95.0.1020.44 "
     })
-    a.setObj("do")
+    a.setObj("甲鱼喜欢岳岳")
     a.queryAll()
     print("拼音       ：", a.pinyin)
     print("音标       ：", a.pronun)
