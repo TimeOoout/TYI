@@ -1,6 +1,6 @@
 # TO's Youdao Interfacce
 ## 基于Python爬虫的有道翻译接口
-> 目前只支持英译中/中译英 \
+> 语言：中英互译 \
 > 作者很懒，几乎不更新/维护 (  ) \
 > 目前已经根据有道词典新版进行完全重构
 > > 从主要使用正则表达式获取数据改为使用xpath获取数据，数据更加简洁干净 
@@ -12,9 +12,9 @@
 
 ![License](https://img.shields.io/badge/license-MIT-yellow)
 ![Language](https://img.shields.io/badge/language-Python-blue)
-![Documentation](https://img.shields.io/badge/documentation-yes-brightgreen)
-![TYI workflow](https://github.com/TimeOoout/TYI/actions/workflows/TYI_test.yml/badge.svg)
-
+![Documentation](https://img.shields.io/badge/documentation-yes-brightgreen) 
+![Latest Release](https://img.shields.io/github/release/TimeOoout/TYI.svg) 
+ ![TYI workflow](https://github.com/TimeOoout/TYI/actions/workflows/TYI_test.yml/badge.svg)
 
 </p>
 
