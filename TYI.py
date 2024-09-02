@@ -203,8 +203,20 @@ class TYI:
         if lis != []:
             list_c = self._html.xpath('//*/span[@data-v-8042e1b4=""][@class="trans"]/text()')
             self.brief_meaning = []
+            print(lis)
+            print(list_c)
             for i in range(len(list_c)):
-                self.brief_meaning.append((lis[i], list_c[i]))
+                try:
+                    self.brief_meaning.append((lis[i], list_c[i]))
+                except:
+                    self.brief_meaning.append((" .", list_c[i]))
+                    """
+                    
+                    这边异常没有添加说明，记得写到文档上！！！！！！！
+                    如果没有对应的词性就打了个点直接跟释义啥的了！！！！！
+                    记得加！！！！！！！
+                    
+                    """
         else:
             lis = self._html.xpath('//*/span[@data-v-8042e1b4=""][@class="col1 index grey"]/text()')
             if lis != []:
@@ -642,7 +654,7 @@ if __name__ == '__main__':
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 "
             "Safari/537.36 Edg/95.0.1020.44 "
     })
-    a.setObj("甲鱼喜欢岳岳")
+    a.setObj("moon")
     a.queryAll()
     print("拼音       ：", a.pinyin)
     print("音标       ：", a.pronun)
